@@ -1,0 +1,485 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# One-shot setup + deploy script for deenxyz/email-gen
+# Usage:
+#   chmod +x setup_and_deploy_email_gen.sh
+#   ./setup_and_deploy_email_gen.sh
+#
+# Notes:
+# - Requires: git
+# - Assumes you have push access to https://github.com/deenxyz/email-gen
+# - After push, enable GitHub Pages in:
+#   https://github.com/deenxyz/email-gen/settings/pages
+#   Source: Deploy from a branch | Branch: main | Folder: /(root)
+
+REPO_URL="https://github.com/deenxyz/email-gen.git"
+REPO_DIR="email-gen"
+BRANCH="main"
+
+if ! command -v git >/dev/null 2>&1; then
+  echo "Error: git is required but not installed."
+  exit 1
+fi
+
+if [ -d "$REPO_DIR/.git" ]; then
+  echo "Repo folder '$REPO_DIR' already exists. Pulling latest..."
+  cd "$REPO_DIR"
+  git checkout "$BRANCH" || true
+  git pull origin "$BRANCH" || true
+else
+  echo "Cloning $REPO_URL ..."
+  git clone "$REPO_URL"
+  cd "$REPO_DIR"
+fi
+
+echo "Writing index.html ..."
+cat > index.html <<'HTML'
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Email Random Number Generator</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <main class="app-shell">
+    <section class="card">
+      <h1>Email + Random Number Generator</h1>
+      <p class="subtitle">Generate formatted entries like <code>email@example.com — #4823</code></p>
+
+      <form id="generatorForm" novalidate>
+        <div class="field">
+          <label for="email">Email address</label>
+          <input
+            id="email"
+            name="email"
+            type="email"
+            placeholder="email@example.com"
+            autocomplete="email"
+            required
+          />
+          <small id="emailError" class="error" aria-live="polite"></small>
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="count">How many numbers (1–10)</label>
+            <input
+              id="count"
+              name="count"
+              type="number"
+              min="1"
+              max="10"
+              value="3"
+              required
+            />
+            <small id="countError" class="error" aria-live="polite"></small>
+          </div>
+
+          <div class="field">
+            <label for="range">Range</label>
+            <select id="range" name="range">
+              <option value="100">1–100</option>
+              <option value="1000000" selected>1–1,000,000</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="generateBtn" type="submit">Generate</button>
+          <button id="copyBtn" type="button" class="ghost" disabled>Copy All</button>
+        </div>
+      </form>
+    </section>
+
+    <section class="card results-card">
+      <h2>Results</h2>
+      <div id="results" class="results" aria-live="polite" aria-atomic="true">
+        <p class="empty">No results yet.</p>
+      </div>
+    </section>
+
+    <section class="card history-card">
+      <h2>History (last 5)</h2>
+      <div id="history" class="history">
+        <p class="empty">No history yet.</p>
+      </div>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+</body>
+</html>
+HTML
+
+echo "Writing styles.css ..."
+cat > styles.css <<'CSS'
+:root {
+  --bg: #f5f7fb;
+  --card: #ffffff;
+  --text: #1f2937;
+  --muted: #6b7280;
+  --primary: #2563eb;
+  --primary-dark: #1d4ed8;
+  --border: #e5e7eb;
+  --error: #dc2626;
+  --success: #16a34a;
+  --shadow: 0 10px 30px rgba(17, 24, 39, 0.08);
+  --radius: 16px;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: var(--text);
+  background: linear-gradient(180deg, #f8fafc 0%, var(--bg) 100%);
+  min-height: 100vh;
+}
+
+.app-shell {
+  width: min(960px, 92%);
+  margin: 32px auto;
+  display: grid;
+  gap: 18px;
+}
+
+.card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+}
+
+h1, h2 { margin-top: 0; margin-bottom: 10px; }
+
+.subtitle {
+  margin-top: 0;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+label { font-weight: 600; font-size: 0.95rem; }
+
+input, select, button { font: inherit; }
+
+input, select {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px 12px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  background: #fff;
+}
+
+input:focus, select:focus, button:focus-visible {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+.field-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.error {
+  min-height: 1em;
+  color: var(--error);
+  font-size: 0.82rem;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+button {
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: transform 0.08s ease, background-color 0.2s ease, opacity 0.2s ease;
+}
+
+button:active { transform: translateY(1px); }
+
+#generateBtn {
+  background: var(--primary);
+  color: #fff;
+  font-weight: 600;
+}
+
+#generateBtn:hover { background: var(--primary-dark); }
+
+button.ghost {
+  background: #eef2ff;
+  color: #1e3a8a;
+  border: 1px solid #c7d2fe;
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.results, .history {
+  display: grid;
+  gap: 10px;
+}
+
+.result-item, .history-item {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  background: #fcfcff;
+  animation: fadeUp 260ms ease;
+}
+
+.result-item { font-weight: 600; }
+
+.empty {
+  margin: 0;
+  color: var(--muted);
+}
+
+.copy-success {
+  color: var(--success);
+  font-size: 0.88rem;
+  margin-top: 4px;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 680px) {
+  .app-shell {
+    width: min(680px, 94%);
+    margin: 18px auto;
+  }
+
+  .card { padding: 16px; }
+
+  .field-row { grid-template-columns: 1fr; }
+}
+CSS
+
+echo "Writing script.js ..."
+cat > script.js <<'JS'
+(() => {
+  const form = document.getElementById("generatorForm");
+  const emailInput = document.getElementById("email");
+  const countInput = document.getElementById("count");
+  const rangeSelect = document.getElementById("range");
+  const generateBtn = document.getElementById("generateBtn");
+  const copyBtn = document.getElementById("copyBtn");
+  const resultsEl = document.getElementById("results");
+  const historyEl = document.getElementById("history");
+  const emailErrorEl = document.getElementById("emailError");
+  const countErrorEl = document.getElementById("countError");
+
+  const MAX_HISTORY = 5;
+  const history = [];
+  let currentLines = [];
+
+  function validateEmail(email) {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
+  }
+
+  function validateCount(count) {
+    return Number.isInteger(count) && count >= 1 && count <= 10;
+  }
+
+  function randomInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+
+  function clearErrors() {
+    emailErrorEl.textContent = "";
+    countErrorEl.textContent = "";
+  }
+
+  function setError(el, message) {
+    el.textContent = message;
+  }
+
+  function renderResults(lines) {
+    resultsEl.innerHTML = "";
+
+    if (!lines.length) {
+      resultsEl.innerHTML = `<p class="empty">No results yet.</p>`;
+      copyBtn.disabled = true;
+      return;
+    }
+
+    const frag = document.createDocumentFragment();
+
+    lines.forEach((line) => {
+      const item = document.createElement("div");
+      item.className = "result-item";
+      item.textContent = line;
+      frag.appendChild(item);
+    });
+
+    resultsEl.appendChild(frag);
+    copyBtn.disabled = false;
+  }
+
+  function renderHistory() {
+    historyEl.innerHTML = "";
+
+    if (!history.length) {
+      historyEl.innerHTML = `<p class="empty">No history yet.</p>`;
+      return;
+    }
+
+    const frag = document.createDocumentFragment();
+
+    history.forEach((entry) => {
+      const wrapper = document.createElement("div");
+      wrapper.className = "history-item";
+
+      const header = document.createElement("div");
+      header.innerHTML = `<strong>${entry.timestamp}</strong> — ${entry.email} (${entry.count} items, range 1-${entry.max})`;
+
+      const list = document.createElement("div");
+      list.style.marginTop = "6px";
+      list.style.color = "#374151";
+      list.style.fontSize = "0.92rem";
+      list.textContent = entry.lines.join(" | ");
+
+      wrapper.appendChild(header);
+      wrapper.appendChild(list);
+      frag.appendChild(wrapper);
+    });
+
+    historyEl.appendChild(frag);
+  }
+
+  function getTimestamp() {
+    return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  }
+
+  function updateGenerateButtonState() {
+    const email = emailInput.value.trim();
+    const count = Number(countInput.value);
+    const isValid = validateEmail(email) && validateCount(count);
+    generateBtn.disabled = !isValid;
+  }
+
+  async function copyAll() {
+    if (!currentLines.length) return;
+    const text = currentLines.join("\n");
+
+    try {
+      await navigator.clipboard.writeText(text);
+      const msg = document.createElement("div");
+      msg.className = "copy-success";
+      msg.textContent = "Copied to clipboard!";
+      resultsEl.appendChild(msg);
+
+      setTimeout(() => {
+        msg.remove();
+      }, 1400);
+    } catch (err) {
+      alert("Could not copy automatically. Please copy manually.");
+    }
+  }
+
+  function handleGenerate(event) {
+    event.preventDefault();
+    clearErrors();
+
+    const email = emailInput.value.trim();
+    const count = Number(countInput.value);
+    const maxRange = Number(rangeSelect.value);
+
+    let hasError = false;
+
+    if (!validateEmail(email)) {
+      setError(emailErrorEl, "Please enter a valid email address.");
+      hasError = true;
+    }
+
+    if (!validateCount(count)) {
+      setError(countErrorEl, "Count must be an integer from 1 to 10.");
+      hasError = true;
+    }
+
+    if (hasError) {
+      currentLines = [];
+      renderResults(currentLines);
+      updateGenerateButtonState();
+      return;
+    }
+
+    const lines = Array.from({ length: count }, () => {
+      const n = randomInt(1, maxRange);
+      return `${email} — #${n}`;
+    });
+
+    currentLines = lines;
+    renderResults(lines);
+
+    history.unshift({
+      timestamp: getTimestamp(),
+      email,
+      count,
+      max: maxRange,
+      lines
+    });
+
+    if (history.length > MAX_HISTORY) history.pop();
+    renderHistory();
+    updateGenerateButtonState();
+  }
+
+  [emailInput, countInput].forEach((input) => {
+    input.addEventListener("input", () => {
+      clearErrors();
+      updateGenerateButtonState();
+    });
+  });
+
+  form.addEventListener("submit", handleGenerate);
+  copyBtn.addEventListener("click", copyAll);
+
+  updateGenerateButtonState();
+  renderResults([]);
+  renderHistory();
+})();
+JS
+
+echo "Committing changes ..."
+git add index.html styles.css script.js
+
+if git diff --cached --quiet; then
+  echo "No changes to commit."
+else
+  git commit -m "Add single-page email random number generator web app"
+  git push origin "$BRANCH"
+fi
+
+echo ""
+echo "Done."
+echo "Now enable GitHub Pages if not already enabled:"
+echo "  https://github.com/deenxyz/email-gen/settings/pages"
+echo "  Source: Deploy from a branch | Branch: main | Folder: /(root)"
+echo ""
+echo "Your site URL (after Pages builds):"
+echo "  https://deenxyz.github.io/email-gen/"
