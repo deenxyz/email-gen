@@ -1,34 +1,31 @@
 :root {
-  --bg: #f5f7fb;
+  --bg: #f6f8fc;
   --card: #ffffff;
-  --text: #1f2937;
+  --text: #111827;
   --muted: #6b7280;
-  --primary: #2563eb;
-  --primary-dark: #1d4ed8;
+  --primary: #1d4ed8;
+  --primary-dark: #1e40af;
   --border: #e5e7eb;
   --error: #dc2626;
-  --success: #16a34a;
-  --shadow: 0 10px 30px rgba(17, 24, 39, 0.08);
-  --radius: 16px;
+  --success: #15803d;
+  --radius: 14px;
+  --shadow: 0 12px 28px rgba(17, 24, 39, 0.08);
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   color: var(--text);
   background: linear-gradient(180deg, #f8fafc 0%, var(--bg) 100%);
-  min-height: 100vh;
 }
 
 .app-shell {
-  width: min(960px, 92%);
-  margin: 32px auto;
+  width: min(980px, 94%);
+  margin: 28px auto;
   display: grid;
-  gap: 18px;
+  gap: 16px;
 }
 
 .card {
@@ -36,72 +33,73 @@ body {
   border: 1px solid var(--border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
-  padding: 20px;
+  padding: 18px;
 }
 
-h1, h2 {
-  margin-top: 0;
-  margin-bottom: 10px;
-}
+h1, h2 { margin: 0 0 10px; }
 
 .subtitle {
-  margin-top: 0;
+  margin: 0 0 16px;
   color: var(--muted);
-  font-size: 0.95rem;
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  margin-bottom: 14px;
+  gap: 7px;
+  margin-bottom: 12px;
+}
+
+.field-grid {
+  display: grid;
+  gap: 12px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
 label {
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.94rem;
 }
 
-input,
-select,
-button {
+textarea, input, select, button {
   font: inherit;
 }
 
-input,
-select {
+textarea, input, select {
   width: 100%;
   border: 1px solid var(--border);
   border-radius: 10px;
   padding: 10px 12px;
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s;
   background: #fff;
+  outline: none;
+  transition: border-color .2s, box-shadow .2s;
 }
 
-input:focus,
-select:focus,
-button:focus-visible {
+textarea {
+  resize: vertical;
+}
+
+textarea:focus, input:focus, select:focus, button:focus-visible {
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+  box-shadow: 0 0 0 3px rgba(29, 78, 216, .15);
 }
 
-.field-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+.hint {
+  color: var(--muted);
+  font-size: .82rem;
 }
 
 .error {
-  min-height: 1em;
   color: var(--error);
-  font-size: 0.82rem;
+  min-height: 1em;
+  font-size: .82rem;
 }
 
 .actions {
   display: flex;
-  gap: 10px;
   flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
 }
 
 button {
@@ -109,51 +107,41 @@ button {
   border-radius: 10px;
   padding: 10px 14px;
   cursor: pointer;
-  transition: transform 0.08s ease, background-color 0.2s ease, opacity 0.2s ease;
+  transition: opacity .2s, transform .08s, background-color .2s;
 }
 
-button:active {
-  transform: translateY(1px);
-}
+button:active { transform: translateY(1px); }
 
 #generateBtn {
   background: var(--primary);
   color: #fff;
   font-weight: 600;
 }
-
-#generateBtn:hover {
-  background: var(--primary-dark);
-}
+#generateBtn:hover { background: var(--primary-dark); }
 
 button.ghost {
   background: #eef2ff;
-  color: #1e3a8a;
   border: 1px solid #c7d2fe;
+  color: #1e3a8a;
 }
 
 button:disabled {
-  opacity: 0.5;
+  opacity: .5;
   cursor: not-allowed;
 }
 
-.results,
-.history {
+.results {
   display: grid;
-  gap: 10px;
-}
-
-.result-item,
-.history-item {
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 10px 12px;
-  background: #fcfcff;
-  animation: fadeUp 260ms ease;
+  gap: 8px;
 }
 
 .result-item {
-  font-weight: 600;
+  border: 1px solid var(--border);
+  background: #fcfcff;
+  border-radius: 10px;
+  padding: 9px 12px;
+  animation: fadeUp .2s ease;
+  font-weight: 550;
 }
 
 .empty {
@@ -163,32 +151,15 @@ button:disabled {
 
 .copy-success {
   color: var(--success);
-  font-size: 0.88rem;
-  margin-top: 4px;
+  font-size: .88rem;
+  margin-top: 6px;
 }
 
 @keyframes fadeUp {
-  from {
-    opacity: 0;
-    transform: translateY(6px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(5px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-@media (max-width: 680px) {
-  .app-shell {
-    width: min(680px, 94%);
-    margin: 18px auto;
-  }
-
-  .card {
-    padding: 16px;
-  }
-
-  .field-row {
-    grid-template-columns: 1fr;
-  }
+@media (max-width: 760px) {
+  .field-grid { grid-template-columns: 1fr; }
 }

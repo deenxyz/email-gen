@@ -3,49 +3,50 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Email Random Number Generator</title>
+  <title>Email Suffix Generator</title>
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <main class="app-shell">
     <section class="card">
-      <h1>Email + Random Number Generator</h1>
-      <p class="subtitle">Generate formatted entries like <code>email@example.com — #4823</code></p>
+      <h1>Email Suffix Generator</h1>
+      <p class="subtitle">
+        Enter multiple emails, choose suffix digit length, generate readable output, and download.
+      </p>
 
       <form id="generatorForm" novalidate>
         <div class="field">
-          <label for="email">Email address</label>
-          <input
-            id="email"
-            name="email"
-            type="email"
-            placeholder="email@example.com"
-            autocomplete="email"
-            required
-          />
-          <small id="emailError" class="error" aria-live="polite"></small>
+          <label for="emails">Email addresses</label>
+          <textarea
+            id="emails"
+            name="emails"
+            rows="6"
+            placeholder="one@example.com&#10;two@example.com&#10;three@example.com"
+            aria-describedby="emailsHelp"
+          ></textarea>
+          <small id="emailsHelp" class="hint">You can separate emails by new lines, commas, or spaces.</small>
+          <small id="emailsError" class="error" aria-live="polite"></small>
         </div>
 
-        <div class="field-row">
+        <div class="field-grid">
           <div class="field">
-            <label for="count">How many numbers (1–10)</label>
-            <input
-              id="count"
-              name="count"
-              type="number"
-              min="1"
-              max="10"
-              value="3"
-              required
-            />
+            <label for="count">How many per email (1–20)</label>
+            <input id="count" name="count" type="number" min="1" max="20" value="1" required />
             <small id="countError" class="error" aria-live="polite"></small>
           </div>
 
           <div class="field">
-            <label for="range">Range</label>
-            <select id="range" name="range">
-              <option value="100">1–100</option>
-              <option value="1000000" selected>1–1,000,000</option>
+            <label for="digits">Digits at end (1–12)</label>
+            <input id="digits" name="digits" type="number" min="1" max="12" value="4" required />
+            <small id="digitsError" class="error" aria-live="polite"></small>
+          </div>
+
+          <div class="field">
+            <label for="downloadFormat">Download format</label>
+            <select id="downloadFormat" name="downloadFormat">
+              <option value="txt" selected>TXT (readable)</option>
+              <option value="csv">CSV (spreadsheet)</option>
+              <option value="json">JSON (structured)</option>
             </select>
           </div>
         </div>
@@ -53,21 +54,15 @@
         <div class="actions">
           <button id="generateBtn" type="submit">Generate</button>
           <button id="copyBtn" type="button" class="ghost" disabled>Copy All</button>
+          <button id="downloadBtn" type="button" class="ghost" disabled>Download</button>
         </div>
       </form>
     </section>
 
-    <section class="card results-card">
-      <h2>Results</h2>
+    <section class="card">
+      <h2>Preview</h2>
       <div id="results" class="results" aria-live="polite" aria-atomic="true">
         <p class="empty">No results yet.</p>
-      </div>
-    </section>
-
-    <section class="card history-card">
-      <h2>History (last 5)</h2>
-      <div id="history" class="history">
-        <p class="empty">No history yet.</p>
       </div>
     </section>
   </main>
